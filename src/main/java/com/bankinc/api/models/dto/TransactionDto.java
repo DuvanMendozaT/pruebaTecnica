@@ -10,6 +10,5 @@ public class TransactionDto {
     private Long numIdTransaction;
     private Double numAmount;
     private LocalDateTime transactionDate;
-    private Long numIdProduct;
 
 }

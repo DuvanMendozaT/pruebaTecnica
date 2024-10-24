@@ -31,7 +31,7 @@ public class TblTransaction {
     private String strStatus;
 
     @ManyToOne
-    @JoinColumn(name = "NUM_ID_PRODUCT", nullable = false)
+    @JoinColumn(name = "NUM_ID_PRODUCT")
     private TblProducts numIdProduct;
 
     @PrePersist

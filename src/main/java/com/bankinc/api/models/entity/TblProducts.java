@@ -2,18 +2,16 @@ package com.bankinc.api.models.entity;
 
 import com.bankinc.api.commmon.Constant;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.time.LocalDateTime;
 
-@Data
 @Entity
 @Builder
-@NoArgsConstructor
+@Getter
+@Setter
 @AllArgsConstructor
+@NoArgsConstructor
 @Table(name = "TBL_PRODUCTS")
 public class TblProducts {
 
@@ -57,5 +55,6 @@ public class TblProducts {
         numActivation = Constant.PRODUCT_INACTIVATE;
         numStatus = Constant.PRODUCT_NO_BLOQUED;
     }
+
 
 }

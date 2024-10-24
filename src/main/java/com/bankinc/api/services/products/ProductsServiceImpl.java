@@ -13,7 +13,6 @@ import com.bankinc.api.repository.ProductRepository;
 import com.bankinc.api.repository.ProductTypeRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
 import java.security.SecureRandom;
 import java.util.Optional;
 
@@ -42,7 +41,8 @@ public class ProductsServiceImpl implements ProductsService {
     @Override
     public ProductDto createProduct(ProductCreationRequest request) {
         TblCustomer tblCustomer = findEntityById(customerRepository.findById(request.getNumIdCustomer()),Constant.NO_EXIST_CLIENT_MESSAGE);
-        TblProductType tblProductType = findEntityById(productTypeRepository.findById(Constant.ID_PRODUCT_TYPE_CARD),Constant.NO_EXIST_PRODUCT_TYPE_MESSAGE);
+        //TblProductType tblProductType = findEntityById(productTypeRepository.findById(Constant.ID_PRODUCT_TYPE_CARD),Constant.NO_EXIST_PRODUCT_TYPE_MESSAGE);
+        TblProductType tblProductType = findEntityById(productTypeRepository.findById(4),Constant.NO_EXIST_PRODUCT_TYPE_MESSAGE);
         TblProducts  tblProducts= TblProducts.builder()
                 .strProductNumber(request.getStrProductnumber())
                 .numIdProducType(tblProductType)

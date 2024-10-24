@@ -65,7 +65,7 @@ public class TransactionServiceImpl implements TransactionService {
         if (tblTransaction.getTransactionDate().isBefore(LocalDateTime.now().minusHours(Constant.ANULATE_TRANSACTION_LIMIT_TIME))) {
             throw new IllegalArgumentException(Constant.TRANSACTION_TIME_LIMIT_EXCEEDED_MESSAGE);
         }
-        final TblProducts tblProducts = findEntityById(productRepository.findById(anulationRequest.getNumIdTransaction()),Constant.NO_EXIST_PRODUCT_MESSAGE);
+        final TblProducts tblProducts = findEntityById(productRepository.findById(anulationRequest.getNumIdProduct()),Constant.NO_EXIST_PRODUCT_MESSAGE);
 
         tblProducts.setNumbalance(tblProducts.getNumbalance() + tblTransaction.getNumAmount());
 
