@@ -1,4 +1,4 @@
-package com.bankinc.api.models.dto.request;
+package com.bankinc.api.models.request;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -9,8 +9,6 @@ import lombok.NonNull;
 @NoArgsConstructor
 @AllArgsConstructor
 public class AnulationRequest {
-    @NonNull
     private Long numIdProduct;
-    @NonNull
     private Long numIdTransaction;
 }

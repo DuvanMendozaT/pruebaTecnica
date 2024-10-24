@@ -1,9 +1,11 @@
 package com.bankinc.api.services.customer;
 
+import com.bankinc.api.models.dto.CustomerDto;
 import com.bankinc.api.models.entity.TblCustomer;
+import com.bankinc.api.models.mappers.CustomerMapper;
 import com.bankinc.api.repository.CustomerRepository;
-import com.bankinc.api.services.customer.CustomerService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -13,29 +15,36 @@ import java.util.Optional;
 public class CustomerServiceimpl implements CustomerService {
     @Autowired
     private CustomerRepository customerRepository;
+    @Autowired
+    private CustomerMapper customerMapper;
 
     @Override
-    public List<TblCustomer> finAll() {
-        return customerRepository.findAll();
+    public List<CustomerDto> findAll() {
+        return customerMapper.toDtos(customerRepository.findAll());
     }
 
     @Override
-    public TblCustomer save(TblCustomer tblCustomer) {
-        return customerRepository.save(tblCustomer);
+    public CustomerDto save(TblCustomer tblCustomer) {
+        return customerMapper.toDto(customerRepository.save(tblCustomer));
     }
 
     @Override
-    public Optional<TblCustomer> findById(long id) {
-        return customerRepository.findById(id);
+    public Optional<CustomerDto> findById(long id) {
+            return customerRepository.findById(id)
+                .map(tblcustomer -> customerMapper.toDto(tblcustomer));
     }
 
     @Override
     public String deleteById(long id) {
-        try {
-            customerRepository.deleteById(id);
-            return "cliente eliminado";
-        }catch (Exception e){
-            return "fallo en la eliminacion";
+        if(customerRepository.existsById(id)){
+            try {
+                customerRepository.deleteById(id);
+                return "Cliente eliminado con éxito";
+            } catch (DataAccessException e) {
+                return "Fallo en la eliminación: " + e.getMessage();
+            }
+        } else {
+            return "Cliente no encontrado";
         }
     }
 }

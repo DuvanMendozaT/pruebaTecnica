@@ -1,186 +1,125 @@
 package com.bankinc.api.services.customer;
 
+import com.bankinc.api.models.dto.CustomerDto;
 import com.bankinc.api.models.entity.TblCustomer;
+import com.bankinc.api.models.mappers.CustomerMapper;
 import com.bankinc.api.repository.CustomerRepository;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.MockitoAnnotations;
+import org.springframework.dao.DataAccessException;
 
-import java.time.LocalDateTime;
-import java.util.Arrays;
-import java.util.Collections;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
-@ExtendWith(MockitoExtension.class)
-class CustomerServiceImplTest {
+
+class CustomerServiceimplTest {
+    @InjectMocks
+    private CustomerServiceimpl customerService;
 
     @Mock
     private CustomerRepository customerRepository;
 
-    @InjectMocks
-    private CustomerServiceimpl customerService;
+    @Mock
+    private CustomerMapper customerMapper;
 
-    private TblCustomer genericCustomer;
+    private TblCustomer customer;
+    private CustomerDto customerDto;
 
     @BeforeEach
-    void setUp() {
-        genericCustomer = new TblCustomer();
-        genericCustomer.setNumIdCustomer(1L);
-        genericCustomer.setStrFirstName("pepito");
-        genericCustomer.setStrlastName("perez");
-        genericCustomer.setStrIdentificationType("CC");
-        genericCustomer.setStrIdentificationNumber("123456789");
-        genericCustomer.setStrPhone("1234567890");
-        genericCustomer.setBirthDate(LocalDateTime.now().minusYears(30));
+    public void setUp() {
+        MockitoAnnotations.openMocks(this);
+        customer = new TblCustomer();
+        customer.setNumIdCustomer(1L);
+        customerDto = new CustomerDto();
+        customerDto.setNumIdCustomer(1L);
     }
 
-    @Nested
-    @DisplayName("findAll Tests")
-    class FindAllTests {
+    @Test
+    public void testFindAll() {
+        List<TblCustomer> customers = new ArrayList<>();
+        customers.add(customer);
 
-        @Test
-        void shouldReturnListOfCustomersWhenCustomersExist() {
-            // Arrange
-            List<TblCustomer> expectedCustomers = Arrays.asList(
-                    genericCustomer,
-                    createCustomer(2L, "maria", "martinez")
-            );
-            when(customerRepository.findAll()).thenReturn(expectedCustomers);
+        when(customerRepository.findAll()).thenReturn(customers);
+        when(customerMapper.toDtos(customers)).thenReturn(List.of(customerDto));
 
-            // Act
-            List<TblCustomer> actualCustomers = customerService.finAll();
+        List<CustomerDto> result = customerService.findAll();
 
-            // Assert
-            assertNotNull(actualCustomers);
-            assertEquals(2, actualCustomers.size());
-            assertEquals(expectedCustomers, actualCustomers);
-            verify(customerRepository, times(1)).findAll();
-        }
-
-        @Test
-        void shouldReturnEmptyListWhenNoCustomersExist() {
-            // Arrange
-            when(customerRepository.findAll()).thenReturn(Collections.emptyList());
-
-            // Act
-            List<TblCustomer> actualCustomers = customerService.finAll();
-
-            // Assert
-            assertNotNull(actualCustomers);
-            assertTrue(actualCustomers.isEmpty());
-            verify(customerRepository, times(1)).findAll();
-        }
+        assertEquals(1, result.size());
+        assertEquals(customerDto, result.get(0));
+        verify(customerRepository, times(1)).findAll();
+        verify(customerMapper, times(1)).toDtos(customers);
     }
 
-    @Nested
-    class SaveTests {
+    @Test
+    public void testSave() {
+        when(customerRepository.save(customer)).thenReturn(customer);
+        when(customerMapper.toDto(customer)).thenReturn(customerDto);
 
-        @Test
-        void shouldSuccessfullySaveValidCustomer() {
-            // Arrange
-            when(customerRepository.save(any(TblCustomer.class))).thenReturn(genericCustomer);
+        CustomerDto result = customerService.save(customer);
 
-            // Act
-            TblCustomer savedCustomer = customerService.save(genericCustomer);
-
-            // Assert
-            assertNotNull(savedCustomer);
-            assertEquals(genericCustomer.getNumIdCustomer(), savedCustomer.getNumIdCustomer());
-            assertEquals(genericCustomer.getStrFirstName(), savedCustomer.getStrFirstName());
-            verify(customerRepository, times(1)).save(any(TblCustomer.class));
-        }
-
-        @Test
-        void shouldThrowExceptionWhenSavingNullCustomer() {
-            // Arrange
-            when(customerRepository.save(null)).thenThrow(IllegalArgumentException.class);
-
-            // Act & Assert
-            assertThrows(IllegalArgumentException.class, () -> customerService.save(null));
-            verify(customerRepository, times(1)).save(null);
-        }
+        assertEquals(customerDto, result);
+        verify(customerRepository, times(1)).save(customer);
+        verify(customerMapper, times(1)).toDto(customer);
     }
 
-    @Nested
-    class FindByIdTests {
+    @Test
+    public void testFindById_Found() {
+        when(customerRepository.findById(customer.getNumIdCustomer())).thenReturn(Optional.of(customer));
+        when(customerMapper.toDto(customer)).thenReturn(customerDto);
 
-        @Test
-        void shouldReturnCustomerWhenValidIdExists() {
-            // Arrange
-            when(customerRepository.findById(1L)).thenReturn(Optional.of(genericCustomer));
+        Optional<CustomerDto> result = customerService.findById(customer.getNumIdCustomer());
 
-            // Act
-            Optional<TblCustomer> foundCustomer = customerService.findById(1L);
-
-            // Assert
-            assertTrue(foundCustomer.isPresent());
-            assertEquals(genericCustomer.getNumIdCustomer(), foundCustomer.get().getNumIdCustomer());
-            verify(customerRepository, times(1)).findById(1L);
-        }
-
-        @Test
-        void shouldReturnEmptyOptionalWhenIdDoesNotExist() {
-            // Arrange
-            when(customerRepository.findById(999L)).thenReturn(Optional.empty());
-
-            // Act
-            Optional<TblCustomer> foundCustomer = customerService.findById(999L);
-
-            // Assert
-            assertFalse(foundCustomer.isPresent());
-            verify(customerRepository, times(1)).findById(999L);
-        }
+        assertTrue(result.isPresent());
+        assertEquals(customerDto, result.get());
+        verify(customerRepository, times(1)).findById(customer.getNumIdCustomer());
+        verify(customerMapper, times(1)).toDto(customer);
     }
 
-    @Nested
-    class DeleteByIdTests {
+    @Test
+    public void testFindById_NotFound() {
+        when(customerRepository.findById(customer.getNumIdCustomer())).thenReturn(Optional.empty());
 
-        @Test
-        void shouldSuccessfullyDeleteExistingCustomer() {
-            // Arrange
-            doNothing().when(customerRepository).deleteById(1L);
+        Optional<CustomerDto> result = customerService.findById(customer.getNumIdCustomer());
 
-            // Act
-            String result = customerService.deleteById(1L);
-
-            // Assert
-            assertEquals("cliente eliminado", result);
-            verify(customerRepository, times(1)).deleteById(1L);
-        }
-
-        @Test
-        void shouldHandleDeletionFailureGracefully() {
-            // Arrange
-            doThrow(new RuntimeException("Database error")).when(customerRepository).deleteById(1L);
-
-            // Act
-            String result = customerService.deleteById(1L);
-
-            // Assert
-            assertEquals("fallo en la eliminacion", result);
-            verify(customerRepository, times(1)).deleteById(1L);
-        }
+        assertFalse(result.isPresent());
+        verify(customerRepository, times(1)).findById(customer.getNumIdCustomer());
     }
 
-    private TblCustomer createCustomer(Long id, String firstName, String lastName) {
-        TblCustomer customer = new TblCustomer();
-        customer.setNumIdCustomer(id);
-        customer.setStrFirstName(firstName);
-        customer.setStrlastName(lastName);
-        customer.setStrIdentificationType("CC");
-        customer.setStrIdentificationNumber("987654321");
-        customer.setStrPhone("9876543210");
-        customer.setBirthDate(LocalDateTime.now().minusYears(25));
-        return customer;
+    @Test
+    public void testDeleteById_Success() {
+        when(customerRepository.existsById(customer.getNumIdCustomer())).thenReturn(true);
+
+        String result = customerService.deleteById(customer.getNumIdCustomer());
+
+        assertEquals("Cliente eliminado con éxito", result);
+        verify(customerRepository, times(1)).deleteById(customer.getNumIdCustomer());
+    }
+
+    @Test
+    public void testDeleteById_NotFound() {
+        when(customerRepository.existsById(customer.getNumIdCustomer())).thenReturn(false);
+
+        String result = customerService.deleteById(customer.getNumIdCustomer());
+
+        assertEquals("Cliente no encontrado", result);
+        verify(customerRepository, never()).deleteById(customer.getNumIdCustomer());
+    }
+
+    @Test
+    public void testDeleteById_DataAccessException() {
+        when(customerRepository.existsById(customer.getNumIdCustomer())).thenReturn(true);
+        doThrow(new DataAccessException("Error de acceso a datos") {}).when(customerRepository).deleteById(customer.getNumIdCustomer());
+
+        String result = customerService.deleteById(customer.getNumIdCustomer());
+
+        assertTrue(result.startsWith("Fallo en la eliminación"));
+        verify(customerRepository, times(1)).deleteById(customer.getNumIdCustomer());
     }
 }

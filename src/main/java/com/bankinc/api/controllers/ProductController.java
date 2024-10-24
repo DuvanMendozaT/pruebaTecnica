@@ -1,8 +1,8 @@
 package com.bankinc.api.controllers;
 
-import com.bankinc.api.models.dto.request.ProductBalanceRequest;
-import com.bankinc.api.models.dto.request.ProductCreationRequest;
-import com.bankinc.api.models.entity.TblProducts;
+import com.bankinc.api.models.dto.ProductDto;
+import com.bankinc.api.models.request.ProductBalanceRequest;
+import com.bankinc.api.models.request.ProductCreationRequest;
 import com.bankinc.api.services.products.ProductsService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -25,7 +25,7 @@ public class ProductController {
 
     @PostMapping("/create")
     @Operation(summary = "crear producto")
-    public ResponseEntity<TblProducts> createProduct(@RequestBody ProductCreationRequest creationRequest){
+    public ResponseEntity<ProductDto> createProduct(@RequestBody ProductCreationRequest creationRequest){
         return ResponseEntity.ok(productsService.createProduct(creationRequest));
     }
 
@@ -51,7 +51,7 @@ public class ProductController {
 
     @PostMapping("/balance")
     @Operation(summary = "recargar producto")
-    public ResponseEntity<TblProducts> rechargebalance(@RequestBody ProductBalanceRequest balanceRequest){
+    public ResponseEntity<ProductDto> rechargebalance(@RequestBody ProductBalanceRequest balanceRequest){
         return ResponseEntity.ok(productsService.rechargebalance(balanceRequest));
     }
 }

@@ -19,7 +19,7 @@ public class TblCustomer {
         @Column(name = "STR_FIRST_NAME", nullable = false, length = 50)
         private String strFirstName;
 
-        @Column(name = "STR_LAST_NAME", length = 50)
+        @Column(name = "STR_LAST_NAME", nullable = false, length = 50)
         private String strlastName;
 
         @Column(name = "STR_IDENTIFICATION_TYPE", nullable = false, length = 10)

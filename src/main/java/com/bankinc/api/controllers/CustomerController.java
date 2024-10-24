@@ -1,8 +1,8 @@
 package com.bankinc.api.controllers;
 
+import com.bankinc.api.models.dto.CustomerDto;
 import com.bankinc.api.models.entity.TblCustomer;
 import com.bankinc.api.services.customer.CustomerService;
-import io.swagger.v3.oas.annotations.OpenAPIDefinition;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,19 +21,19 @@ public class CustomerController {
 
     @Operation(summary = "Listar clientes")
     @GetMapping("/all")
-    public List<TblCustomer> listCustomer(){
-        return customerService.finAll();
+    public List<CustomerDto> listCustomer(){
+        return customerService.findAll();
     }
 
     @PostMapping("/create")
     @Operation(summary = "crear clientes")
-    public ResponseEntity<TblCustomer> createCustomer(@RequestBody TblCustomer tblCustomer){
+    public ResponseEntity<CustomerDto> createCustomer(@RequestBody TblCustomer tblCustomer){
         return ResponseEntity.ok(customerService.save(tblCustomer));
     }
 
     @GetMapping("/{id}")
     @Operation(summary = "consultar clientes")
-    public ResponseEntity<Optional<TblCustomer>> findById(@PathVariable long id) {
+    public ResponseEntity<Optional<CustomerDto>> findById(@PathVariable long id) {
         return ResponseEntity.ok(customerService.findById(id));
     }
 

@@ -1,4 +1,5 @@
 package com.bankinc.api.models.entity;
+import com.bankinc.api.commmon.Constant;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -36,6 +37,6 @@ public class TblTransaction {
     @PrePersist
     protected void onCreate() {
         transactionDate = LocalDateTime.now();
-        strStatus = "exitosa";
+        strStatus = Constant.SUCESS_STATUS;
     }
 }

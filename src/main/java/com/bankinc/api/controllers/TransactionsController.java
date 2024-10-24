@@ -1,8 +1,8 @@
 package com.bankinc.api.controllers;
 
-import com.bankinc.api.models.dto.request.AnulationRequest;
-import com.bankinc.api.models.dto.request.PurchaseRequest;
-import com.bankinc.api.models.entity.TblTransaction;
+import com.bankinc.api.models.dto.TransactionDto;
+import com.bankinc.api.models.request.AnulationRequest;
+import com.bankinc.api.models.request.PurchaseRequest;
 import com.bankinc.api.services.transaction.TransactionService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -19,18 +19,17 @@ public class TransactionsController {
 
     @PostMapping("/purchase")
     @Operation(summary = "Realizar compra")
-    public ResponseEntity<TblTransaction> purchase(@RequestBody PurchaseRequest purchaseRequest){
+    public ResponseEntity<TransactionDto> purchase(@RequestBody PurchaseRequest purchaseRequest){
         return ResponseEntity.ok(transactionService.purchase(purchaseRequest));
     }
     @GetMapping("/{transactionId}")
     @Operation(summary = "consultar compra")
-    public ResponseEntity<TblTransaction> getTransactionById(@PathVariable Long transactionId) {
-        TblTransaction transaction = transactionService.getTransactionById(transactionId);
-        return ResponseEntity.ok(transaction);
+    public ResponseEntity<TransactionDto> getTransactionById(@PathVariable Long transactionId) {
+        return ResponseEntity.ok(transactionService.getTransactionById(transactionId));
     }
     @PostMapping("/anulation")
     @Operation(summary = "anular compra")
-    public ResponseEntity<TblTransaction> anulateTransaction(@RequestBody AnulationRequest anulationRequest) {
+    public ResponseEntity<TransactionDto> anulateTransaction(@RequestBody AnulationRequest anulationRequest) {
         return ResponseEntity.ok(transactionService.anulateTransaction(anulationRequest));
     }
 }

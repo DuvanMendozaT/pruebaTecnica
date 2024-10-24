@@ -1,5 +1,6 @@
 package com.bankinc.api.models.entity;
 
+import com.bankinc.api.commmon.Constant;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -51,10 +52,10 @@ public class TblProducts {
     @PrePersist
     protected void onCreate() {
         dtmCreationDate = LocalDateTime.now();
-        dtmExpirationDate = dtmCreationDate.plusYears(3);
+        dtmExpirationDate = dtmCreationDate.plusYears(Constant.VALIDITY_TIME);
         numbalance = 0.0;
-        numActivation = 0;
-        numStatus = 1;
+        numActivation = Constant.PRODUCT_INACTIVATE;
+        numStatus = Constant.PRODUCT_NO_BLOQUED;
     }
 
 }

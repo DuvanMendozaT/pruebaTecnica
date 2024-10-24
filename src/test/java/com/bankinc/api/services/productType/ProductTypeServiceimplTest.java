@@ -1,162 +1,123 @@
 package com.bankinc.api.services.productType;
 
+import com.bankinc.api.models.dto.ProductTypeDto;
 import com.bankinc.api.models.entity.TblProductType;
+import com.bankinc.api.models.mappers.ProductTypeMapper;
 import com.bankinc.api.repository.ProductTypeRepository;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.MockitoAnnotations;
+import org.springframework.dao.DataAccessException;
 
-import java.util.Arrays;
-import java.util.Collections;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
-@ExtendWith(MockitoExtension.class)
-class ProductTypeServiceImplTest {
+class ProductTypeServiceimplTest {
+    @InjectMocks
+    private ProductTypeServiceimpl productTypeService;
 
     @Mock
     private ProductTypeRepository productTypeRepository;
 
-    @InjectMocks
-    private ProductTypeServiceimpl productTypeService;
+    @Mock
+    private ProductTypeMapper productTypeMapper;
 
-    private TblProductType genericProducType;
+    private TblProductType tblProductType;
+    private ProductTypeDto productTypeDto;
 
     @BeforeEach
-    void setUp() {
-        genericProducType = new TblProductType();
-        genericProducType.setNumIdProductType(1);
-        genericProducType.setStrProductNumber("123456");
-        genericProducType.setStrDescription("tarjeta de debito");
+    public void setUp() {
+        MockitoAnnotations.openMocks(this);
+
+        tblProductType = new TblProductType();
+        tblProductType.setNumIdProductType(1);
+
+        productTypeDto = new ProductTypeDto();
+        productTypeDto.setNumIdProductType(1);
     }
 
-    @Nested
-    @DisplayName("finAll Tests")
-    class FindAllTests {
+    @Test
+    public void testFindAll() {
+        List<TblProductType> productTypeList = new ArrayList<>();
+        productTypeList.add(tblProductType);
 
-        @Test
+        when(productTypeRepository.findAll()).thenReturn(productTypeList);
+        when(productTypeMapper.toDtos(productTypeList)).thenReturn(List.of(productTypeDto));
 
-        void shouldReturnListOfProductTypesWhenTheyExist() {
-            // Arrange
-            List<TblProductType> expectedProductTypes = Arrays.asList(
-                    genericProducType,
-                    createProductType(2, "234567", "tarjeta de debito")
-            );
-            when(productTypeRepository.findAll()).thenReturn(expectedProductTypes);
+        List<ProductTypeDto> result = productTypeService.findAll();
 
-            // Act
-            List<TblProductType> actualProductTypes = productTypeService.finAll();
-
-            // Assert
-            assertNotNull(actualProductTypes);
-            assertEquals(2, actualProductTypes.size());
-            assertEquals(expectedProductTypes, actualProductTypes);
-            verify(productTypeRepository, times(1)).findAll();
-        }
-
-        @Test
-        void shouldReturnEmptyListWhenNoProductTypesExist() {
-            // Arrange
-            when(productTypeRepository.findAll()).thenReturn(Collections.emptyList());
-
-            // Act
-            List<TblProductType> actualProductTypes = productTypeService.finAll();
-
-            // Assert
-            assertNotNull(actualProductTypes);
-            assertTrue(actualProductTypes.isEmpty());
-            verify(productTypeRepository, times(1)).findAll();
-        }
+        assertEquals(1, result.size());
+        assertEquals(productTypeDto, result.get(0));
+        verify(productTypeRepository, times(1)).findAll();
     }
 
-    @Nested
-    class SaveTests {
+    @Test
+    public void testSave() {
+        when(productTypeRepository.save(tblProductType)).thenReturn(tblProductType);
+        when(productTypeMapper.toDto(tblProductType)).thenReturn(productTypeDto);
 
-        @Test
-        void shouldSuccessfullySaveValidProductType() {
-            // Arrange
-            when(productTypeRepository.save(any(TblProductType.class))).thenReturn(genericProducType);
+        ProductTypeDto result = productTypeService.save(tblProductType);
 
-            // Act
-            TblProductType savedProductType = productTypeService.save(genericProducType);
-
-            // Assert
-            assertNotNull(savedProductType);
-            assertEquals(genericProducType.getNumIdProductType(), savedProductType.getNumIdProductType());
-            assertEquals(genericProducType.getStrProductNumber(), savedProductType.getStrProductNumber());
-            assertEquals(genericProducType.getStrDescription(), savedProductType.getStrDescription());
-            verify(productTypeRepository, times(1)).save(any(TblProductType.class));
-        }
-
-        @Test
-        void shouldThrowExceptionWhenSavingNullProductType() {
-            // Arrange
-            when(productTypeRepository.save(null)).thenThrow(IllegalArgumentException.class);
-
-            // Act & Assert
-            assertThrows(IllegalArgumentException.class, () -> productTypeService.save(null));
-            verify(productTypeRepository, times(1)).save(null);
-        }
+        assertEquals(productTypeDto, result);
+        verify(productTypeRepository, times(1)).save(tblProductType);
     }
 
-    @Nested
-    class FindByIdTests {
+    @Test
+    public void testFindById_Found() {
+        when(productTypeRepository.findById(1)).thenReturn(Optional.of(tblProductType));
+        when(productTypeMapper.toDto(tblProductType)).thenReturn(productTypeDto);
 
-        @Test
-        void shouldReturnEmptyOptionalForAnyId() {
-            // Act
-            Optional<TblProductType> result = productTypeService.findById(1);
+        Optional<ProductTypeDto> result = productTypeService.findById(1);
 
-            // Assert
-            assertFalse(result.isPresent());
-            verify(productTypeRepository, never()).findById(anyInt());
-        }
+        assertTrue(result.isPresent());
+        assertEquals(productTypeDto, result.get());
+        verify(productTypeRepository, times(1)).findById(1);
     }
 
-    @Nested
-    class DeleteByIdTests {
+    @Test
+    public void testFindById_NotFound() {
+        when(productTypeRepository.findById(1)).thenReturn(Optional.empty());
 
-        @Test
-        void shouldSuccessfullyDeleteExistingProductType() {
-            // Arrange
-            doNothing().when(productTypeRepository).deleteById(1);
+        Optional<ProductTypeDto> result = productTypeService.findById(1);
 
-            // Act
-            String result = productTypeService.deleteById(1);
-
-            // Assert
-            assertEquals("tipo de producto elimiando", result);
-            verify(productTypeRepository, times(1)).deleteById(1);
-        }
-
-        @Test
-        void shouldHandleDeletionFailureGracefully() {
-            // Arrange
-            doThrow(new RuntimeException("Error de base de datos")).when(productTypeRepository).deleteById(1);
-
-            // Act
-            String result = productTypeService.deleteById(1);
-
-            // Assert
-            assertEquals("erroe en la eliminacion", result);
-            verify(productTypeRepository, times(1)).deleteById(1);
-        }
+        assertFalse(result.isPresent());
+        verify(productTypeRepository, times(1)).findById(1);
     }
 
-    private TblProductType createProductType(int id, String productNumber, String description) {
-        TblProductType productType = new TblProductType();
-        productType.setNumIdProductType(id);
-        productType.setStrProductNumber(productNumber);
-        productType.setStrDescription(description);
-        return productType;
+    @Test
+    public void testDeleteById_Exists() {
+        when(productTypeRepository.existsById(1)).thenReturn(true);
+
+        String result = productTypeService.deleteById(1);
+
+        assertEquals("Cliente eliminado con éxito", result);
+        verify(productTypeRepository, times(1)).deleteById(1);
     }
+
+    @Test
+    public void testDeleteById_NotFound() {
+        when(productTypeRepository.existsById(1)).thenReturn(false);
+
+        String result = productTypeService.deleteById(1);
+
+        assertEquals("Cliente no encontrado", result);
+        verify(productTypeRepository, never()).deleteById(1);
+    }
+
+    @Test
+    public void testDeleteById_Failure() {
+        when(productTypeRepository.existsById(1)).thenReturn(true);
+        doThrow(new DataAccessException("Database error") {}).when(productTypeRepository).deleteById(1);
+
+        String result = productTypeService.deleteById(1);
+
+        assertEquals("Fallo en la eliminación: Database error", result);
+    }
+
 }

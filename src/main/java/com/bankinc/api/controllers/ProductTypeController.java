@@ -1,5 +1,6 @@
 package com.bankinc.api.controllers;
 
+import com.bankinc.api.models.dto.ProductTypeDto;
 import com.bankinc.api.models.entity.TblProductType;
 import com.bankinc.api.services.productType.ProductTypeService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -20,19 +21,19 @@ public class ProductTypeController {
 
     @GetMapping("/all")
     @Operation(summary = "listar tipos de productos")
-    public List<TblProductType> listProductsType(){
-        return productTypeService.finAll();
+    public List<ProductTypeDto> listProductsType(){
+        return productTypeService.findAll();
     }
 
     @PostMapping("/create")
     @Operation(summary = "crear tipos de productos")
-    public ResponseEntity<TblProductType> createProductsType(@RequestBody TblProductType tblProductType){
+    public ResponseEntity<ProductTypeDto> createProductsType(@RequestBody TblProductType tblProductType){
         return ResponseEntity.ok(productTypeService.save(tblProductType));
     }
 
     @GetMapping("/{id}")
     @Operation(summary = "consultar tipos de productos")
-    public ResponseEntity<Optional<TblProductType>> findById(@PathVariable int id) {
+    public ResponseEntity<Optional<ProductTypeDto>> findById(@PathVariable int id) {
         return ResponseEntity.ok(productTypeService.findById(id));
     }
 

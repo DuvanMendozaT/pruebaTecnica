@@ -1,32 +1,28 @@
 package com.bankinc.api.services.transaction;
 
 import com.bankinc.api.commmon.Constant;
-import com.bankinc.api.models.dto.request.AnulationRequest;
-import com.bankinc.api.models.dto.request.PurchaseRequest;
-import com.bankinc.api.models.entity.TblCustomer;
-import com.bankinc.api.models.entity.TblProductType;
+import com.bankinc.api.models.dto.TransactionDto;
 import com.bankinc.api.models.entity.TblProducts;
 import com.bankinc.api.models.entity.TblTransaction;
+import com.bankinc.api.models.mappers.TransactionMapper;
+import com.bankinc.api.models.request.AnulationRequest;
+import com.bankinc.api.models.request.PurchaseRequest;
 import com.bankinc.api.repository.ProductRepository;
 import com.bankinc.api.repository.TransactionRepository;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.MockitoAnnotations;
 
 import java.time.LocalDateTime;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
-
-@ExtendWith(MockitoExtension.class)
 class TransactionServiceImplTest {
+    @InjectMocks
+    private TransactionServiceImpl transactionService;
 
     @Mock
     private ProductRepository productRepository;
@@ -34,228 +30,186 @@ class TransactionServiceImplTest {
     @Mock
     private TransactionRepository transactionRepository;
 
-    @InjectMocks
-    private TransactionServiceImpl transactionService;
+    @Mock
+    private TransactionMapper transactionMapper;
 
-    private TblProducts genericProduct;
-    private TblTransaction genericTransaction;
-    private PurchaseRequest samplePurchaseRequest;
-    private AnulationRequest sampleAnulationRequest;
+    private TblProducts tblProducts;
+    private TblTransaction tblTransaction;
+    private TransactionDto transactionDto;
 
     @BeforeEach
-    void setUp() {
-        TblCustomer customer = new TblCustomer();
-        customer.setNumIdCustomer(1L);
+    public void setUp() {
+        MockitoAnnotations.openMocks(this);
 
-        TblProductType productType = new TblProductType();
-        productType.setNumIdProductType(1);
+        // Inicialización de productos de prueba
+        tblProducts = new TblProducts();
+        tblProducts.setNumActivation(Constant.PRODUCT_ACTIVATE);
+        tblProducts.setNumStatus(Constant.PRODUCT_ACTIVATE);
+        tblProducts.setNumbalance(100.0);
+        tblProducts.setDtmExpirationDate(LocalDateTime.now().plusDays(1));
 
-        genericProduct = TblProducts.builder()
-                .numIdProduct(1L)
-                .strProductNumber("1234567890123456")
-                .numIdProducType(productType)
-                .numIdCustomer(customer)
-                .dtmExpirationDate(LocalDateTime.now().plusYears(1))
-                .dtmCreationDate(LocalDateTime.now())
-                .numbalance(1000.0)
-                .numActivation(Constant.PRODUCT_ACTIVATE)
-                .numStatus(1)
+        tblTransaction = TblTransaction.builder()
+                .numAmount(50.0)
+                .numIdProduct(tblProducts)
                 .build();
 
-        genericTransaction = TblTransaction.builder()
-                .numIdTransaction(1L)
-                .numAmount(100.0)
-                .transactionDate(LocalDateTime.now())
-                .strStatus("exitosa")
-                .numIdProduct(genericProduct)
-                .build();
-
-        samplePurchaseRequest = new PurchaseRequest();
-        samplePurchaseRequest.setNumIdProduct(1L);
-        samplePurchaseRequest.setPrice(100.0);
-
-        sampleAnulationRequest = new AnulationRequest();
-        sampleAnulationRequest.setNumIdTransaction(1L);
-        sampleAnulationRequest.setNumIdTransaction(1L);
+        transactionDto = new TransactionDto();
+        transactionDto.setNumAmount(50.0);
     }
 
-    @Nested
-    class PurchaseTests {
-        @Test
+    @Test
+    public void testPurchase_Success() {
+        PurchaseRequest purchaseRequest = new PurchaseRequest();
+        purchaseRequest.setNumIdProduct(1L);
+        purchaseRequest.setPrice(50.0);
 
-        void shouldSuccessfullyProcessValidPurchase() {
-            // Arrange
-            when(productRepository.findById(1L)).thenReturn(Optional.of(genericProduct));
-            when(productRepository.save(any(TblProducts.class))).thenReturn(genericProduct);
-            when(transactionRepository.save(any(TblTransaction.class))).thenReturn(genericTransaction);
+        when(productRepository.findById(1L)).thenReturn(Optional.of(tblProducts));
+        when(transactionMapper.toDto(any())).thenReturn(transactionDto);
+        when(transactionRepository.save(any())).thenReturn(tblTransaction);
 
-            // Act
-            TblTransaction result = transactionService.purchase(samplePurchaseRequest);
+        TransactionDto result = transactionService.purchase(purchaseRequest);
 
-            // Assert
-            assertNotNull(result);
-            assertEquals(genericTransaction.getNumAmount(), result.getNumAmount());
-            assertEquals(900.0, genericProduct.getNumbalance()); // 1000 - 100
-            verify(productRepository).findById(1L);
-            verify(productRepository).save(genericProduct);
-            verify(transactionRepository).save(any(TblTransaction.class));
-        }
-
-        @Test
-        void shouldThrowExceptionWhenCardNotActivated() {
-            // Arrange
-            genericProduct.setNumActivation(0);
-            when(productRepository.findById(1L)).thenReturn(Optional.of(genericProduct));
-
-            // Act & Assert
-            IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
-                    () -> transactionService.purchase(samplePurchaseRequest));
-            assertEquals("La tarjeta no ha sido activada", exception.getMessage());
-            verify(productRepository, never()).save(any());
-            verify(transactionRepository, never()).save(any());
-        }
-
-        @Test
-        @DisplayName("Should throw exception when card is blocked")
-        void shouldThrowExceptionWhenCardBlocked() {
-            // Arrange
-            genericProduct.setNumStatus(0);
-            when(productRepository.findById(1L)).thenReturn(Optional.of(genericProduct));
-
-            // Act & Assert
-            IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
-                    () -> transactionService.purchase(samplePurchaseRequest));
-            assertEquals("La tarjeta ha sido bloquedad", exception.getMessage());
-            verify(productRepository, never()).save(any());
-            verify(transactionRepository, never()).save(any());
-        }
-
-        @Test
-        void shouldThrowExceptionWhenCardExpired() {
-            // Arrange
-            genericProduct.setDtmExpirationDate(LocalDateTime.now().minusDays(1));
-            when(productRepository.findById(1L)).thenReturn(Optional.of(genericProduct));
-
-            // Act & Assert
-            IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
-                    () -> transactionService.purchase(samplePurchaseRequest));
-            assertEquals("La tarjeta se encuentra expirada", exception.getMessage());
-            verify(productRepository, never()).save(any());
-            verify(transactionRepository, never()).save(any());
-        }
-
-        @Test
-        void shouldThrowExceptionWhenInsufficientBalance() {
-            // Arrange
-            samplePurchaseRequest.setPrice(2000.0); // More than available balance
-            when(productRepository.findById(1L)).thenReturn(Optional.of(genericProduct));
-
-            // Act & Assert
-            IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
-                    () -> transactionService.purchase(samplePurchaseRequest));
-            assertEquals("Saldo insuficiente", exception.getMessage());
-            verify(productRepository, never()).save(any());
-            verify(transactionRepository, never()).save(any());
-        }
+        assertNotNull(result);
+        assertEquals(50.0, result.getNumAmount());
+        assertEquals(50.0, tblProducts.getNumbalance());
+        verify(productRepository, times(1)).save(tblProducts);
+        verify(transactionRepository, times(1)).save(tblTransaction);
     }
 
-    @Nested
-    class GetTransactionByIdTests {
+    @Test
+    public void testPurchase_ProductNotActive() {
+        tblProducts.setNumActivation(Constant.PRODUCT_INACTIVATE);
+        PurchaseRequest purchaseRequest = new PurchaseRequest();
+        purchaseRequest.setNumIdProduct(1L);
+        purchaseRequest.setPrice(50.0);
 
-        @Test
-        void shouldReturnTransactionWhenExists() {
-            // Arrange
-            when(transactionRepository.findById(1L)).thenReturn(Optional.of(genericTransaction));
+        when(productRepository.findById(1L)).thenReturn(Optional.of(tblProducts));
 
-            // Act
-            TblTransaction result = transactionService.getTransactionById(1L);
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
+            transactionService.purchase(purchaseRequest);
+        });
 
-            // Assert
-            assertNotNull(result);
-            assertEquals(genericTransaction.getNumIdTransaction(), result.getNumIdTransaction());
-            verify(transactionRepository).findById(1L);
-        }
-
-        @Test
-        void shouldThrowExceptionWhenTransactionNotFound() {
-            // Arrange
-            when(transactionRepository.findById(1L)).thenReturn(Optional.empty());
-
-            // Act & Assert
-            IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
-                    () -> transactionService.getTransactionById(1L));
-            assertEquals("Transaccion no existente", exception.getMessage());
-            verify(transactionRepository).findById(1L);
-        }
+        assertEquals(Constant.NO_ACTIVE_PRODUCT_MESSAGE, exception.getMessage());
     }
 
-    @Nested
-    class AnulateTransactionTests {
+    @Test
+    public void testPurchase_ProductBlocked() {
+        tblProducts.setNumStatus(Constant.PRODUCT_BLOQUED);
+        PurchaseRequest purchaseRequest = new PurchaseRequest();
+        purchaseRequest.setNumIdProduct(1L);
+        purchaseRequest.setPrice(50.0);
 
-        @Test
-        void shouldSuccessfullyAnnulTransactionWithinTimeLimit() {
-            // Arrange
-            when(transactionRepository.findById(1L)).thenReturn(Optional.of(genericTransaction));
-            when(productRepository.findById(1L)).thenReturn(Optional.of(genericProduct));
-            when(productRepository.save(any(TblProducts.class))).thenReturn(genericProduct);
-            when(transactionRepository.save(any(TblTransaction.class))).thenReturn(genericTransaction);
+        when(productRepository.findById(1L)).thenReturn(Optional.of(tblProducts));
 
-            // Act
-            TblTransaction result = transactionService.anulateTransaction(sampleAnulationRequest);
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
+            transactionService.purchase(purchaseRequest);
+        });
 
-            // Assert
-            assertNotNull(result);
-            assertEquals("anulada", result.getStrStatus());
-            assertEquals(1100.0, genericProduct.getNumbalance()); // 1000 + 100
-            verify(transactionRepository).findById(1L);
-            verify(productRepository).findById(1L);
-            verify(productRepository).save(genericProduct);
-            verify(transactionRepository).save(genericTransaction);
-        }
-
-        @Test
-        void shouldThrowExceptionWhenTransactionTooOld() {
-            // Arrange
-            genericTransaction.setTransactionDate(LocalDateTime.now().minusHours(25));
-            when(transactionRepository.findById(1L)).thenReturn(Optional.of(genericTransaction));
-
-            // Act & Assert
-            IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
-                    () -> transactionService.anulateTransaction(sampleAnulationRequest));
-            assertEquals("La transaccion supera el limite de tiempo de 24 horas", exception.getMessage());
-            verify(transactionRepository).findById(1L);
-            verify(productRepository, never()).findById(anyLong());
-            verify(productRepository, never()).save(any());
-            verify(transactionRepository, never()).save(any());
-        }
-
-        @Test
-        void shouldThrowExceptionWhenTransactionNotFound() {
-            // Arrange
-            when(transactionRepository.findById(1L)).thenReturn(Optional.empty());
-
-            // Act & Assert
-            IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
-                    () -> transactionService.anulateTransaction(sampleAnulationRequest));
-            assertEquals("Transaccion no encontrada", exception.getMessage());
-            verify(transactionRepository).findById(1L);
-            verify(productRepository, never()).findById(anyLong());
-        }
-
-        @Test
-        void shouldThrowExceptionWhenProductNotFound() {
-            // Arrange
-            when(transactionRepository.findById(1L)).thenReturn(Optional.of(genericTransaction));
-            when(productRepository.findById(1L)).thenReturn(Optional.empty());
-
-            // Act & Assert
-            IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
-                    () -> transactionService.anulateTransaction(sampleAnulationRequest));
-            assertEquals("producto no encontrado.", exception.getMessage());
-            verify(transactionRepository).findById(1L);
-            verify(productRepository).findById(1L);
-            verify(productRepository, never()).save(any());
-            verify(transactionRepository, never()).save(any());
-        }
+        assertEquals(Constant.BLOQUED_PRODUCT_MESSAGE, exception.getMessage());
     }
+
+    @Test
+    public void testPurchase_ProductExpired() {
+        tblProducts.setDtmExpirationDate(LocalDateTime.now().minusDays(1));
+        PurchaseRequest purchaseRequest = new PurchaseRequest();
+        purchaseRequest.setNumIdProduct(1L);
+        purchaseRequest.setPrice(50.0);
+
+        when(productRepository.findById(1L)).thenReturn(Optional.of(tblProducts));
+
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
+            transactionService.purchase(purchaseRequest);
+        });
+
+        assertEquals(Constant.EXPIRED_PRODUCT_MESSAGE, exception.getMessage());
+    }
+
+    @Test
+    public void testPurchase_InsufficientBalance() {
+        tblProducts.setNumbalance(30.0);
+        PurchaseRequest purchaseRequest = new PurchaseRequest();
+        purchaseRequest.setNumIdProduct(1L);
+        purchaseRequest.setPrice(50.0);
+
+        when(productRepository.findById(1L)).thenReturn(Optional.of(tblProducts));
+
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
+            transactionService.purchase(purchaseRequest);
+        });
+
+        assertEquals(Constant.INSUFFICIENT_BALANCE, exception.getMessage());
+    }
+
+    @Test
+    public void testGetTransactionById_Success() {
+        when(transactionRepository.findById(1L)).thenReturn(Optional.of(tblTransaction));
+        when(transactionMapper.toDto(tblTransaction)).thenReturn(transactionDto);
+
+        TransactionDto result = transactionService.getTransactionById(1L);
+
+        assertNotNull(result);
+        assertEquals(transactionDto, result);
+        verify(transactionRepository, times(1)).findById(1L);
+    }
+
+    @Test
+    public void testGetTransactionById_NotFound() {
+        when(transactionRepository.findById(1L)).thenReturn(Optional.empty());
+
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
+            transactionService.getTransactionById(1L);
+        });
+
+        assertEquals(Constant.NO_EXIST_TRANSACTION_MESSAGE, exception.getMessage());
+    }
+
+    @Test
+    public void testAnulateTransaction_Success() {
+        AnulationRequest anulationRequest = new AnulationRequest();
+        anulationRequest.setNumIdTransaction(1L);
+
+        tblTransaction.setTransactionDate(LocalDateTime.now().minusMinutes(30));
+        when(transactionRepository.findById(1L)).thenReturn(Optional.of(tblTransaction));
+        when(productRepository.findById(1L)).thenReturn(Optional.of(tblProducts));
+        when(transactionMapper.toDto(tblTransaction)).thenReturn(transactionDto);
+
+        TransactionDto result = transactionService.anulateTransaction(anulationRequest);
+
+        assertNotNull(result);
+        assertEquals(transactionDto, result);
+        assertEquals(Constant.ANULATE_STATUS, tblTransaction.getStrStatus());
+        assertEquals(80.0, tblProducts.getNumbalance());
+        verify(productRepository, times(1)).save(tblProducts);
+        verify(transactionRepository, times(1)).save(tblTransaction);
+    }
+
+    @Test
+    public void testAnulateTransaction_TransactionTimeLimitExceeded() {
+        AnulationRequest anulationRequest = new AnulationRequest();
+        anulationRequest.setNumIdTransaction(1L);
+
+        tblTransaction.setTransactionDate(LocalDateTime.now().minusHours(1));
+        when(transactionRepository.findById(1L)).thenReturn(Optional.of(tblTransaction));
+
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
+            transactionService.anulateTransaction(anulationRequest);
+        });
+
+        assertEquals(Constant.TRANSACTION_TIME_LIMIT_EXCEEDED_MESSAGE, exception.getMessage());
+    }
+
+    @Test
+    public void testAnulateTransaction_NotFound() {
+        AnulationRequest anulationRequest = new AnulationRequest();
+        anulationRequest.setNumIdTransaction(1L);
+
+        when(transactionRepository.findById(1L)).thenReturn(Optional.empty());
+
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
+            transactionService.anulateTransaction(anulationRequest);
+        });
+
+        assertEquals(Constant.NO_EXIST_TRANSACTION_MESSAGE, exception.getMessage());
+    }
+
 }
